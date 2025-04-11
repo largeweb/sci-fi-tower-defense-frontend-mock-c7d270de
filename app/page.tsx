@@ -1,101 +1,123 @@
-import Image from "next/image";
+// app/page.tsx
+"use client";
 
-return function Home() {
+import React, { useState, useEffect } from "react";
+import { motion } from "framer-motion";
+import GameGrid from "./components/GameGrid";
+import Tower from "./components/Tower";
+import Enemy from "./components/Enemy";
+import UpgradeButton from "./components/UpgradeButton";
+import GameOverScreen from "./components/GameOverScreen";
+
+const initialTowers = [
+  { id: "tower1", type: "laser", level: 1, position: { x: 2, y: 2 } },
+  { id: "tower2", type: "missile", level: 2, position: { x: 5, y: 5 } },
+];
+
+const initialEnemies = [
+  { id: "enemy1", type: "grunt", health: 100, speed: 1, position: { x: 0, y: 3 } },
+  { id: "enemy2", type: "tank", health: 200, speed: 0.5, position: { x: 0, y: 6 } },
+];
+
+const gridSize = 10;
+
+export default function Home() {
+  const [towers, setTowers] = useState(initialTowers);
+  const [enemies, setEnemies] = useState(initialEnemies);
+  const [gameOver, setGameOver] = useState(false);
+
+  // Mock upgrade function
+  const handleUpgrade = (towerId: string) => {
+    setTowers((prevTowers) =>
+      prevTowers.map((tower) =>
+        tower.id === towerId ? { ...tower, level: tower.level + 1 } : tower
+      )
+    );
+  };
+
+  // Mock restart function
+  const handleRestart = () => {
+    setTowers(initialTowers);
+    setEnemies(initialEnemies);
+    setGameOver(false);
+  };
+
+  // Mock enemy movement (simplified)
+  useEffect(() => {
+    if (!gameOver) {
+      const intervalId = setInterval(() => {
+        setEnemies((prevEnemies) =>
+          prevEnemies.map((enemy) => {
+            // Simple movement: move right until end of grid
+            const newX = Math.min(enemy.position.x + enemy.speed, gridSize - 1);
+            return { ...enemy, position: { ...enemy.position, x: newX } };
+          })
+        );
+      }, 1000); // Adjust interval for speed
+
+      return () => clearInterval(intervalId);
+    }
+  }, [gameOver]);
+
+  // Check for game over condition (simplified)
+  useEffect(() => {
+    if (enemies.some((enemy) => enemy.position.x >= gridSize - 1)) {
+      setGameOver(true);
+    }
+  }, [enemies]);
+
   return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-semibold">
-              app/page.tsx
-            </code>
-            .
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
+    <div className="min-h-screen bg-gray-900 text-gray-100 flex flex-col items-center justify-center p-4">
+      <h1 className="text-4xl font-bold mb-6 text-center">
+        Sci-Fi Tower Defense (Mock)
+      </h1>
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+      <div className="relative">
+        <GameGrid gridSize={gridSize} />
+
+        {/* Render Towers */}
+        {towers.map((tower) => (
+          <motion.div
+            key={tower.id}
+            className="absolute"
+            style={{
+              top: `${(tower.position.y / gridSize) * 100}%`,
+              left: `${(tower.position.x / gridSize) * 100}%`,
+              width: `${100 / gridSize}%`,
+              height: `${100 / gridSize}%`,
+            }}
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            transition={{ duration: 0.3 }}
           >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:min-w-44"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+            <Tower type={tower.type} level={tower.level} position={tower.position} />
+            <UpgradeButton tower={tower} onClick={() => handleUpgrade(tower.id)} />
+          </motion.div>
+        ))}
+
+        {/* Render Enemies */}
+        {enemies.map((enemy) => (
+          <motion.div
+            key={enemy.id}
+            className="absolute"
+            style={{
+              top: `${(enemy.position.y / gridSize) * 100}%`,
+              left: `${(enemy.position.x / gridSize) * 100}%`,
+              width: `${100 / gridSize}%`,
+              height: `${100 / gridSize}%`,
+            }}
+            animate={{ x: `${(enemy.position.x / gridSize) * 100}%` }} // Animate X position
+            transition={{ duration: 1 }} // Adjust duration for speed
           >
-            Read our docs
-          </a>
-        </div>
-      </main>
-      <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+            <Enemy type={enemy.type} position={enemy.position} />
+          </motion.div>
+        ))}
+
+        {/* Game Over Screen */}
+        {gameOver && (
+          <GameOverScreen onRestart={handleRestart} />
+        )}
+      </div>
     </div>
   );
 }
